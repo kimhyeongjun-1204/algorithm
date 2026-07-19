@@ -1,70 +1,52 @@
-import java.util.*; 
+import java.util.*;
 
 class Solution {
-    int eLen; 
-    ArrayList<String> eDiscount = new ArrayList<>(); 
-    PriorityQueue<int[]> pq = new PriorityQueue<>((a,b) -> a[0] != b[0] ? b[0] - a[0] : b[1] - a[1]); 
-    
+    int eLen;
+    int[] emoticons;
+    int[][] users;
+    int maxPlus = 0, maxBuy = 0;
+
     public int[] solution(int[][] users, int[] emoticons) {
-        int[] answer = {};
-        eLen = emoticons.length; 
-        
-        // 할인율 설정 
-        HashMap<Character, Integer> rate = new HashMap<>(); 
-        rate.put('0', 10); 
-        rate.put('1', 20); 
-        rate.put('2', 30); 
-        rate.put('3', 40); 
-        
-        bfs(new StringBuilder()); 
-        
-        for(String eDis : eDiscount) {
-            int totalPlus = 0, totalBuy = 0; 
-            
-            for(int[] user : users) {
-                int sum = 0; 
-                boolean buyPlus = false; 
-                
-                int uRate = user[0], 
-                    uPrice = user[1]; 
-                
-                for(int i=0;i<eLen;i++) {
-                    int ePrice = emoticons[i]; 
-                    int eRate = rate.get(eDis.charAt(i)); 
-                    int disPrice = ePrice * (100-eRate) / 100; 
-                    
-                    if(uRate <= eRate) {
-                        sum += disPrice; 
-                        if(sum >= uPrice) {
-                            buyPlus = true; 
-                            break; 
-                        }
-                    }
-                }
-                
-                if(buyPlus) {
-                    totalPlus++; 
-                }else {
-                    totalBuy += sum; 
-                }
-            }
-            
-            pq.add(new int[]{totalPlus, totalBuy}); 
-        }
-            
-        return pq.poll();
+        this.users = users;
+        this.emoticons = emoticons;
+        eLen = emoticons.length;
+
+        dfs(new int[eLen], 0);
+        return new int[]{maxPlus, maxBuy};
     }
 
-    void bfs(StringBuilder sb) {
-        if(sb.length() >= eLen) {
-            eDiscount.add(sb.toString()); 
-            return; 
+    void dfs(int[] rates, int depth) {
+        if (depth == eLen) {
+            calc(rates);
+            return;
         }
-            
-        for(char c='0';c<='3';c++) {
-            sb.append(c); 
-            bfs(sb); 
-            sb.deleteCharAt(sb.length()-1); 
+        for (int r = 10; r <= 40; r += 10) {
+            rates[depth] = r;
+            dfs(rates, depth + 1);
+        }
+    }
+
+    void calc(int[] rates) {
+        int totalPlus = 0, totalBuy = 0;
+
+        for (int[] user : users) {
+            int sum = 0;
+            boolean plus = false;
+
+            for (int i = 0; i < eLen; i++) {
+                if (user[0] <= rates[i]) {
+                    sum += emoticons[i] * (100 - rates[i]) / 100;
+                    if (sum >= user[1]) { plus = true; break; }
+                }
+            }
+
+            if (plus) totalPlus++;
+            else totalBuy += sum;
+        }
+
+        if (totalPlus > maxPlus || (totalPlus == maxPlus && totalBuy > maxBuy)) {
+            maxPlus = totalPlus;
+            maxBuy = totalBuy;
         }
     }
 }
